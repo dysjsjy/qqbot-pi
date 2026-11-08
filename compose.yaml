@@ -1,0 +1,34 @@
+services:
+  database:
+    image: pgvector/pgvector:0.8.2-pg17
+    environment:
+      POSTGRES_DB: qqbot
+      POSTGRES_USER: qqbot
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U qqbot -d qqbot]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  bot:
+    build: .
+    init: true
+    depends_on:
+      database:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: jdbc:postgresql://database:5432/qqbot
+      DATABASE_USER: qqbot
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - state:/app/.state
+    stop_grace_period: 15s
+    restart: unless-stopped
+volumes:
+  database:
+  state:

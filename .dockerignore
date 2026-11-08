@@ -1,0 +1,9 @@
+.tools
+.state
+.env
+target
+**/node_modules
+admin-web/dist
+plan
+test-support
+.git

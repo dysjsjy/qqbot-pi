@@ -1,0 +1,88 @@
+{
+  "checkedAt": "2026-11-07T22:47:04.301731+08:00",
+  "backend": {
+    "command": "mvnw.cmd -q -Pfrontend verify",
+    "status": "PASS",
+    "tests": 24,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": [
+      {
+        "suite": "dev.qqbot.ApiSecurityTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 6.997
+      },
+      {
+        "suite": "dev.qqbot.ApplicationIntegrationTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 6.792
+      },
+      {
+        "suite": "dev.qqbot.DatabaseIntegrationTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 9.481
+      },
+      {
+        "suite": "dev.qqbot.HttpAdapterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 0.333
+      },
+      {
+        "suite": "dev.qqbot.PiRuntimeTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 3.243
+      }
+    ]
+  },
+  "frontend": {
+    "command": "npm ci && npm run build",
+    "status": "PASS"
+  },
+  "browser": {
+    "command": "npx playwright test",
+    "status": "PASS",
+    "tests": 1,
+    "api": "mock routes",
+    "chromiumBuild": "1248"
+  },
+  "composeConfig": {
+    "status": "PASS",
+    "runtimeBuild": "NOT_RUN"
+  },
+  "artifact": {
+    "path": "target/qqbot-pi-0.1.0-SNAPSHOT.jar",
+    "bytes": 32295334,
+    "sha256": "61af456bc56b8bc8362ee9eb89f98e95982ad5f6b07869b7fb615e3af50cb42c",
+    "frontendAssetsMatch": true
+  },
+  "environment": {
+    "java": "Microsoft OpenJDK 21.0.9",
+    "node": "22.22.1",
+    "pi": "@earendil-works/pi-coding-agent@1.5.0",
+    "database": "PGlite 0.5.15 with pgvector (PostgreSQL engine 18.6), not target PostgreSQL 17 service"
+  },
+  "externalAcceptance": {
+    "realQQ": "BLOCKED: credentials and gateway not provided",
+    "realWeixin": "BLOCKED: concrete gateway and credentials not provided",
+    "realModels": "BLOCKED: model credentials and evaluation corpus not provided",
+    "dockerRuntime": "BLOCKED: Docker Engine not running",
+    "twoHourSoak": "NOT_RUN",
+    "backupRestore": "NOT_RUN"
+  }
+}

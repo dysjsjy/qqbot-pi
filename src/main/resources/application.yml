@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: qqbot-pi
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/qqbot}
+    username: ${DATABASE_USER:qqbot}
+    password: ${DATABASE_PASSWORD:}
+    hikari:
+      maximum-pool-size: 8
+  flyway:
+    enabled: true
+  task:
+    scheduling:
+      pool:
+        size: 6
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+server:
+  port: ${PORT:8080}
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: ${COOKIE_SECURE:true}
+  error:
+    include-message: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+bot:
+  admin-username: ${ADMIN_USERNAME:admin}
+  admin-password-hash: ${ADMIN_PASSWORD_HASH:}
+  state-dir: ${BOT_STATE_DIR:.state}
+  scheduling: ${BOT_SCHEDULING:true}
+  pi:
+    node: ${PI_NODE:node}
+    cli: ${PI_CLI:runtime/pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js}
+    provider: ${PI_PROVIDER:}
+    model: ${PI_MODEL:}
+    key-env: ${PI_KEY_ENV:OPENAI_API_KEY}
+    api-key: ${PI_API_KEY:}
+    timeout-seconds: ${PI_TIMEOUT_SECONDS:60}
+    base-url: ${PI_BASE_URL:}
+  embedding:
+    url: ${EMBEDDING_URL:}
+    api-key: ${EMBEDDING_API_KEY:}
+    model: ${EMBEDDING_MODEL:}
+    dimensions: ${EMBEDDING_DIMENSIONS:1536}
+    min-similarity: ${EMBEDDING_MIN_SIMILARITY:0.65}
+  qq:
+    enabled: ${QQ_ENABLED:false}
+    base-url: ${QQ_BASE_URL:}
+    token: ${QQ_TOKEN:}
+    account-id: ${QQ_ACCOUNT_ID:}
+    webhook-secret: ${QQ_WEBHOOK_SECRET:}
+  weixin:
+    enabled: ${WEIXIN_ENABLED:false}
+    base-url: ${WEIXIN_BASE_URL:}
+    token: ${WEIXIN_TOKEN:}
+    account-id: ${WEIXIN_ACCOUNT_ID:}
+    webhook-secret: ${WEIXIN_WEBHOOK_SECRET:}
