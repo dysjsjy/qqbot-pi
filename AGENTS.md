@@ -11,6 +11,7 @@ Java 17+ + Spring Boot 3.5.16 + SQLite 3.51.1.0 + pi 1.5.0 + React 19.3.1 + Vite
 - `src/test/`：Java 协议、鉴权和隔离 SQLite 回归。不进入镜像。
 - `runtime/pi/`：固定版本的 pi RPC 运行依赖。
 - `scripts/`：本机启动、部署和维护脚本。
+- `tool/`：本机统计工具，不参与应用运行。
 
 ## 配置
 

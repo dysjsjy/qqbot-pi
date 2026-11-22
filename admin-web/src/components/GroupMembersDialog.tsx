@@ -1,6 +1,6 @@
 /**
  * [INPUT]: 依赖群与账号快照、管理 API 和原生对话框。
- * [OUTPUT]: 提供活跃成员分页、详情及带版本的管理员授予和撤销。
+ * [OUTPUT]: 提供成员分页、只读画像状态和管理员授权操作。
  * [POS]: 群管理详情；成员数据只显示在触发入口对应的群范围。
  * [PROTOCOL]: Update this header on change, then check AGENTS.md
  */
@@ -67,7 +67,7 @@ export default function GroupMembersDialog({group,busy,act,onClose,returnFocus}:
    <form className="member-filters" onSubmit={event=>{event.preventDefault();setOffset(0);setQuery(search);}}>
     <label>搜索成员<input maxLength={200} placeholder="昵称或成员 ID" value={search} onChange={event=>setSearch(event.target.value)}/></label>
     <div className="form-row">
-     <label>统计范围<select value={days} onChange={event=>{setOffset(0);setDays(Number(event.target.value));}}><option value={7}>近 7 天</option><option value={30}>近 30 天</option></select></label>
+     <label>统计范围<select value={days} onChange={event=>{setOffset(0);setDays(Number(event.target.value));}}><option value={7}>近 7 天</option><option value={30}>近 30 天</option><option value={90}>近 90 天</option></select></label>
      <label>排序<select value={sort} onChange={event=>{setOffset(0);setSort(event.target.value);}}><option value="messages">发言数</option><option value="recent">最近发言</option></select></label>
     </div>
     <div className="action-row"><label className="check"><input type="checkbox" checked={adminOnly} onChange={event=>{setOffset(0);setAdminOnly(event.target.checked);}}/>仅看已配置管理员</label><button className="secondary">搜索</button></div>
@@ -85,7 +85,7 @@ export default function GroupMembersDialog({group,busy,act,onClose,returnFocus}:
    <div className="modal-actions"><button className="secondary" onClick={onClose}>关闭</button></div>
   </>:<>
    {detail?<>
-    <dl className="detail-grid">{[['昵称',detail.member.senderName],['成员 ID',detail.member.senderId],['近 7 天',`${detail.messages7d} 条`],['近 30 天',`${detail.messages30d} 条`],['最后发言',seen(detail.member.lastAt)],['机器人管理员',detail.member.admin?'已配置':'未配置']].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+    <dl className="detail-grid">{[['昵称',detail.member.senderName],['成员 ID',detail.member.senderId],['近 7 天',`${detail.messages7d} 条`],['近 30 天',`${detail.messages30d} 条`],['近 90 天',`${detail.messages90d} 条`],['最后发言',seen(detail.member.lastAt)],['机器人管理员',detail.member.admin?'已配置':'未配置'],['成员画像',detail.optedOut?'已退出':detail.hasProfile?'已建档':'未建档']].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
     {notice&&<p className="banner" role="status">{notice}</p>}
     {confirm&&<p className="banner">确认{detail.member.admin?'撤销':'授予'}「{detail.member.senderName}」在「{detail.groupName}」对机器人 {detail.accountId} 的管理员权限？不影响其他群或机器人。</p>}
    </>:!error&&<p role="status">正在读取成员详情…</p>}

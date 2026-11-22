@@ -163,3 +163,14 @@ npm.cmd --prefix admin-web run build
 ```
 
 `-Pfrontend` 将管理台静态文件打包进 JAR。官网单独在 `xiu-bot-front` 运行 `npm ci` 和 `npm run build`。Java 回归使用临时 SQLite 和合成数据，不进入生产镜像；真实平台与模型需另行验证。源码结构见 [项目地图](AGENTS.md)。
+
+### 代码统计
+
+需要 Python 3.10 或更高版本，无需安装第三方包：
+
+```powershell
+python tool/count_code.py
+python tool/count_code.py src/main
+```
+
+默认扫描项目根目录；指定目录时只统计该目录。结果按代码类型列出文件数、总行数、空行数和非空行数。非空行包含注释。依赖、锁文件、过程目录和构建产物不计入；直接指定排除目录或其子目录时返回错误。

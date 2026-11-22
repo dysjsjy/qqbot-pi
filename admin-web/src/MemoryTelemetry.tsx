@@ -8,8 +8,8 @@ import {useEffect,useRef,useState} from 'react';
 import {api,ApiError} from './api';
 import type {MemoryContextStats,MemoryPurpose,MemorySettings,MemoryUsage,MemoryUsageTotals} from './types';
 
-const purposes:Record<MemoryPurpose,string>={CHAT:'普通聊天',MEMORY_QUERY:'历史查询',MEMORY_SUMMARY:'记忆概括',DAILY_SUMMARY:'群日报'};
-const layerNames:Record<keyof MemoryContextStats['layerTokens'],string>={system:'系统',current:'当前问题',manual:'人工记忆',history:'对话历史',evidence:'检索资料',summary:'工作摘要',overhead:'协议与模板'};
+const purposes:Record<MemoryPurpose,string>={CHAT:'普通聊天',MEMORY_QUERY:'历史查询',MEMORY_SUMMARY:'记忆概括',DAILY_SUMMARY:'群日报',MEMBER_PROFILE:'成员画像'};
+const layerNames:Record<keyof MemoryContextStats['layerTokens'],string>={system:'系统',current:'当前问题',manual:'人工记忆',profile:'成员画像',history:'对话历史',evidence:'检索资料',summary:'工作摘要',overhead:'协议与模板'};
 const reasonNames:Record<string,string>={LAYER_BUDGET:'层额度不足',TOTAL_BUDGET:'总额度不足',DUPLICATE_SOURCE:'重复来源',TRUNCATED:'已节选'};
 const message=(failure:unknown)=>failure instanceof Error?failure.message:'请求失败，请重试';
 
@@ -59,7 +59,7 @@ export function MemoryUsagePanel({groupId}:{groupId:string}){
   return()=>{stopped=true;controller.abort();};
  },[groupId,date,reload]);
  return <section className="panel pad memory-usage" aria-label="记忆用量"><h2>生成用量与费用</h2><p>生成费用，不含向量服务。实际用量与粗估分别展示，价格采用每次调用开始时的快照。</p><div className="memory-date"><label>用量日期（上海时间）<input type="date" value={date} onChange={event=>setDate(event.target.value)}/></label><button className="secondary" onClick={()=>setReload(value=>value+1)}>刷新用量</button></div>
-  {error?<p role="alert" className="banner error">{error}</p>:!usage?<p role="status">正在加载用量…</p>:<><p className="muted">{usage.date} · {usage.zone} · 币种 {usage.currency} · 价格版本 {usage.priceVersion}</p><UsageTotals usage={usage}/><details><summary>按用途查看</summary>{(Object.keys(purposes) as MemoryPurpose[]).map(purpose=><section className="memory-purpose" key={purpose}><h3>{purposes[purpose]}</h3><UsageTotals usage={usage.byPurpose[purpose]}/></section>)}</details></>}
+  {error?<p role="alert" className="banner error">{error}</p>:!usage?<p role="status">正在加载用量…</p>:<><p className="muted">{usage.date} · {usage.zone} · 币种 {usage.currency} · 价格版本 {usage.priceVersion}</p><UsageTotals usage={usage}/><details><summary>按用途查看</summary>{(Object.keys(purposes) as MemoryPurpose[]).filter(purpose=>usage.byPurpose[purpose]).map(purpose=><section className="memory-purpose" key={purpose}><h3>{purposes[purpose]}</h3><UsageTotals usage={usage.byPurpose[purpose]}/></section>)}</details></>}
  </section>;
 }
 

@@ -11,7 +11,7 @@
 - `qunzhi-mark.svg`：自绘折页 Z；页面与标签栏共用图形源。
 - `Login.tsx`：管理员登录与产品能力入口。
 - `Groups.tsx`：会话 CRUD、活跃成员入口与官方连接事件。
-- `Memory.tsx`：会话隔离的检索、归档文档与任务操作。
+- `Memory.tsx`：按目标偏移读取归档页；群聊标签页保留草稿，画像在首次打开时加载。
 - `MemorySettings.tsx`：Markdown 人工记忆编辑与带版本的群回复策略。
 - `MemoryTelemetry.tsx`：归档设置冲突、生成用量与上下文层统计。
 - `Logs.tsx`：运行日志筛选、轮询、导出和操作审计。

@@ -8,6 +8,9 @@
 /admin-web/dist/
 /admin-web/test-results/
 /admin-web/playwright-report/
+/test-support/node_modules/
+/test-support/playwright-report/
+/test-support/test-results/
 /runtime/pi/node_modules/
 *.log
 __pycache__/
