@@ -1,0 +1,37 @@
+name: qqbot-pi
+services:
+  front:
+    image: xiu-bot-front:__RELEASE_VERSION__
+    pull_policy: never
+    ports:
+      - "${FRONT_BIND_ADDRESS:-127.0.0.1}:${FRONT_PORT:-8081}:80"
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+  bot:
+    image: qqbot-pi:__RELEASE_VERSION__
+    pull_policy: never
+    init: true
+    env_file: .env
+    environment:
+      PORT: "8080"
+      SPRING_PROFILES_ACTIVE: sqlite
+      DATABASE_URL: jdbc:sqlite:/app/.state/qqbot.db
+      BOT_STATE_DIR: /app/.state
+    ports:
+      - "${BOT_BIND_ADDRESS:-127.0.0.1}:${BOT_PORT:-8080}:8080"
+    volumes:
+      - state:/app/.state
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8080/actuator/health').then(async response=>{if(!response.ok||(await response.json()).status!=='UP')process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 12
+    stop_grace_period: 15s
+    restart: unless-stopped
+volumes:
+  state:

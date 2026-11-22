@@ -1,0 +1,11 @@
+<!--
+  [INPUT]: 依赖群知橙色与选定的 12 号折页 Z 构图。
+  [OUTPUT]: 提供无外部依赖的折页 Z 品牌标识。
+  [POS]: 页面品牌、装饰标识与浏览器图标的唯一图形源。
+  [PROTOCOL]: Update this header on change, then check AGENTS.md
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="#B64B1B"/>
+  <path d="M14 14h36v10L27 42h23v9H14V40l23-17H14v-9Z" fill="#FFF8EF"/>
+  <path d="M37 23h13L27 42H14l23-19Z" fill="#F5B77E"/>
+</svg>

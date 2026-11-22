@@ -1,1 +1,21 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="theme-color" content="#101a25"/><title>群知 · Bot 管理台</title></head><body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body></html>
+<!doctype html>
+<!--
+  [INPUT]: 依赖 React 入口与群知自绘 SVG 标识。
+  [OUTPUT]: 提供中文页面元信息与浏览器标签栏图标。
+  [POS]: Vite 文档入口；图标与页面品牌使用同一资源。
+  [PROTOCOL]: Update this header on change, then check AGENTS.md
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#b64b1b" />
+    <meta name="description" content="群知，连接 QQ 与微信的群聊知识工作空间。记住共同灵感，让讨论成为共享知识。" />
+    <link rel="icon" type="image/svg+xml" href="/src/qunzhi-mark.svg" />
+    <title>群知 · 让讨论成为共同记忆</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

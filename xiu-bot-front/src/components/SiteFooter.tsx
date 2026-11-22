@@ -1,0 +1,4 @@
+import {ArrowUp,ArrowUpRight} from 'lucide-react';
+import {Logo} from './SiteHeader';
+import {links} from '../content/site';
+export default function SiteFooter(){return <footer className="footer wrap"><div className="footer-main"><div><Logo/><p>让有用的对话，接着发生。</p></div><nav aria-label="页脚导航"><a href="#docs">项目文档</a>{links.repository&&<a href={links.repository} target="_blank" rel="noopener noreferrer">GitHub<ArrowUpRight size={14} aria-hidden="true"/></a>}{links.issues&&<a href={links.issues} target="_blank" rel="noopener noreferrer">Issues<ArrowUpRight size={14} aria-hidden="true"/></a>}<a href="/images/CREDITS.md">素材来源</a><a href="#top">返回顶部<ArrowUp size={15} aria-hidden="true"/></a></nav></div><div className="footer-note"><span>源码项目：qqbot-pi · 自行部署，按需配置。</span><span>页面示例为合成数据，不连接真实机器人。</span></div></footer>;}

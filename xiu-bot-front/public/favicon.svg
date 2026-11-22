@@ -1,0 +1,11 @@
+<!--
+ [INPUT]: 依赖管理台折页 Z 构图。
+ [OUTPUT]: 提供官网导航、页脚和标签栏的图标。
+ [POS]: 独立部署版品牌标识。与管理台使用同一设计。
+ [PROTOCOL]: Update this header on change, then check AGENTS.md
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+ <rect x="2" y="2" width="60" height="60" rx="17" fill="#B64B1B"/>
+ <path d="M14 14h36v10L27 42h23v9H14V40l23-17H14v-9Z" fill="#FFF8EF"/>
+ <path d="M37 23h13L27 42H14l23-19Z" fill="#F5B77E"/>
+</svg>

@@ -1,0 +1,88 @@
+# memory/
+> L2 | Parent: ../AGENTS.md
+
+- `CitationMode.java`：声明生成任务的引用要求。
+- `ContextAssembler.java`：排序并去重候选块，按总预算和分层限额选入提示。
+- `ContextBundle.java`：传递已组装提示、证据与引用要求。
+- `ContextPromptRenderer.java`：序列化系统与用户提示，固定引用编号并计算 UTF-8 层用量。
+- `ContextRequest.java`：传递上下文请求的会话代际和问题。
+- `ContextStats.java`：记录上下文分层用量和选取结果。
+- `ConversationHistory.java`：按当前范围读取有序历史事件。
+- `DialogueWindows.java`：过滤窗口内噪声和重复。达到容量时保留前文，到达会话间隔时重新分窗。
+- `EmbeddingClient.java`：调用嵌入接口并转换向量格式。
+- `Evidence.java`：传递来源标识、正文及检索得分。
+- `EvidenceSearch.java`：按查询模式合并词法与向量候选。
+- `HistoryEvent.java`：传递有序历史消息或回复。
+- `LegacySqliteCopy.java`：创建 V9 副本并按旧表列投影复制；事务提交时检查外键。
+- `LexicalMemorySearch.java`：复核索引来源和热窗，限制索引及回退读取的正文总数。
+- `MarkdownArchive.java`：提供归档管理接口，委托摘要入队、生成和到期清理。
+- `MarkdownArchiveRetention.java`：按冷留存裁剪文档和来源，并登记分段重写。
+- `MarkdownMemory.java`：替换会话记忆与归档文档文件；删除时登记文件墓碑。
+- `MarkdownMemoryWorker.java`：串行执行摘要；遇到后台槽位不足时结束当前轮询。
+- `MarkdownSearch.java`：为 Markdown 搜索接口转换词法检索结果。
+- `MarkdownSummaryExecution.java`：认领并生成 v1 或 v2 摘要。发布和失败回排在各自事务内完成。
+- `MarkdownSummaryPreparation.java`：按群水位、策略和模型预算选择来源，事务内登记摘要批次。
+- `MarkdownSummaryText.java`：定义原文消息投影、v2 提示与预算口径。
+- `MemberLabels.java`：生成不直接暴露平台 ID 的成员标签。
+- `MemberProfileActivity.java`：按水位读取有效发言并计算双窗口统计、别名与准入计数。
+- `MemberProfileContext.java`：从当前群的已选参与者读取聊天画像；查证模式跳过。
+- `MemberProfileEdges.java`：按回复和提及计算 30 天互动边，使用成员清除水位及活跃事件限制边界。
+- `MemberProfileEvidence.java`：根据画像水位和冷留存读取本人发言，限制背景前文并复核来源。
+- `MemberProfileExtractor.java`：用认领快照编排抽取和重铸，模型返回后按作业版本发布结果。
+- `MemberProfileJobs.java`：按配额与席位选择作业，事务内冻结画像版本、证据水位和重铸条件。
+- `MemberProfileLifecycle.java`：在清除事务设定证据下界；解绑过期原文并衰减观测。
+- `MemberProfileObservations.java`：计算独立证据窗口、观测确认及替换，写入观测快照。
+- `MemberProfilePolicyService.java`：隔离群与 epoch，按版本写双开关并按已分发账目限制配额。
+- `MemberProfilePrompts.java`：渲染有界抽取和重铸提示，返回允许引用的来源与观测。
+- `MemberProfileService.java`：读取本人证据；在事务内提交人工纠偏、参与设置和画像作业。
+- `MemberProfileStats.java`：读取有类型的成员状态；在调用方事务发布锁定席位、候选与预览。
+- `MemberProfileWorker.java`：在实例锁与账目恢复后串行轮询并运行已认领作业；与日报共用后台槽。
+- `MemoryAdministration.java`：为管理接口汇总留存概览、记忆状态与操作。
+- `MemoryContext.java`：校验会话范围，读取人工背景和摘要，再决定是否检索并记录预算统计。
+- `MemoryMaintenance.java`：裁剪热索引、有限冷留存与过程记录；汇报无法删除的未引用检查点。
+- `MemoryPolicyService.java`：查询和按版本保存归档策略。
+- `MemoryScope.java`：约束检索的群、epoch、序号和时间范围。
+- `MemorySearchIndex.java`：按群水位编排手工记忆、原文和摘要索引，提供词法查询入口。
+- `MemorySearchWriter.java`：预先分词并计算稳定身份，复核来源后原子发布分块、词项和引用。
+- `MemorySearchWorker.java`：轮询待构建词法索引的会话。
+- `MemoryService.java`：连接回复的按需检索、预算组装和管理搜索。
+- `MemorySource.java`：传递可展示的记忆检索结果。
+- `MemoryWorker.java`：调度向量索引与记忆清理。
+- `ProfileGuardrails.java`：约束模型 JSON 和本人证据 UUID，过滤指令及敏感文本。
+- `QueryMode.java`：区分普通对话与历史查询。
+- `QueryRouter.java`：根据请求类型与问题选择查询模式。
+- `RawArchiveCli.java`：提供原始归档离线迁移与校验命令。
+- `RawArchiveCollector.java`：在群锁下执行回收任务，按 tombstone 或指纹删除，记录重试。
+- `RawArchiveCompaction.java`：对比已提交帧与剩余来源，分批落盘并在复核后切换分段代际。
+- `RawArchiveCursor.java`：校验分页作用域、序号和游标传输格式。
+- `RawArchiveException.java`：传递原始归档错误码。
+- `RawArchiveGcManifest.java`：解码原有重写和删除清单，在文件操作前校验所有路径。
+- `RawArchiveLegacyExport.java`：将已校验原文分页导出为 V9 Markdown 与源映射；副本完整后写清单。
+- `RawArchiveLifecycle.java`：编排原始归档恢复、到期和清除。
+- `RawArchiveMigration.java`：迁移旧归档、校验新分段、切换发布状态；校验通过后交给 V9 导出器。
+- `RawArchiveMigrationPublication.java`：提交分段、水位与引用；在完成事务中排队回收旧文件。
+- `RawArchiveMigrationStorage.java`：冻结来源指纹，并按大小限额写入暂存分段。
+- `RawArchiveMigrationVerifier.java`：只读核对旧 Markdown、分段原文与 SQLite 来源和引用。
+- `RawArchivePageReader.java`：在群锁内查询并复核来源与分段窗口。发现损坏时原子标记状态。
+- `RawArchivePublication.java`：事务内复核来源与水位，再发布分段及引用；迁移和回收复用分段重叠检查。
+- `RawArchiveService.java`：在群锁内按水位选取原文，轮换并落盘分段，再提交 SQLite 发布。
+- `RawArchiveState.java`：在 SQLite 初始化状态并读取留存窗口计数；记录退避与重试。
+- `RawArchiveWorker.java`：轮询待归档的会话与归档文件任务。
+- `RawPartition.java`：定义由会话 ID 和 epoch 组成的归档分区。
+- `RawRecord.java`：映射 SQLite 原文行，定义分段记录和 V9 Markdown 表示。
+- `RawSegment.java`：传递分段的序号、字节边界和提交状态。
+- `RawSegmentFormat.java`：定义 V1 文件头、帧、载荷与校验值；检查提交边界。
+- `RawSegmentLog.java`：追加并刷新原文帧；验证提交范围，恢复时截断未提交尾部。
+- `RawSegmentPaths.java`：限定分区路径和文件回收范围，复核待删旧文件指纹。
+- `RawSegmentStore.java`：持有实例锁和群锁；委托日志、稀疏索引和路径操作。
+- `RawSparseIndex.java`：校验并缓存序号到文件偏移的索引；失效时只依赖提交帧重建。
+- `RetrievalGate.java`：按提示选择检索模式，过滤历史噪声与记忆引用。
+- `Role.java`：区分历史中的用户消息与助手回复。
+- `SearchText.java`：提取词项、分块并计算词法相关度。
+- `SourceKind.java`：区分原始消息、手工记忆、概括和向量来源。
+- `SummaryDocumentFormat.java`：发布前校验 v2 摘要五节结构、正文引用与完整来源清单。
+- `VectorMemory.java`：嵌入后在事务中复核并发布向量；先排序去重，再限量读取热正文和对齐旧分块。
+
+回复使用统一预算上下文。热索引不决定归档寿命。
+
+[PROTOCOL]: Update this header on change, then check AGENTS.md

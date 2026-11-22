@@ -1,34 +1,33 @@
 services:
-  database:
-    image: pgvector/pgvector:0.8.2-pg17
-    environment:
-      POSTGRES_DB: qqbot
-      POSTGRES_USER: qqbot
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Set DATABASE_PASSWORD}
-    volumes:
-      - database:/var/lib/postgresql/data
-    healthcheck:
-      test: [CMD-SHELL, pg_isready -U qqbot -d qqbot]
-      interval: 5s
-      timeout: 3s
-      retries: 20
+  front:
+    build:
+      context: ./xiu-bot-front
+      args:
+        VITE_ADMIN_PORT: ${BOT_PORT:-8080}
+        VITE_ADMIN_URL: ${ADMIN_PUBLIC_URL:-}
+        VITE_REPOSITORY_URL: ${FRONT_REPOSITORY_URL:-}
+        VITE_DOCS_BASE_URL: ${FRONT_DOCS_BASE_URL:-}
+        VITE_SITE_URL: ${FRONT_SITE_URL:-}
+    ports:
+      - "${FRONT_BIND_ADDRESS:-127.0.0.1}:${FRONT_PORT:-8081}:80"
     restart: unless-stopped
   bot:
-    build: .
+    build:
+      context: .
+      args:
+        JAVA_VERSION: ${JAVA_VERSION:-21}
     init: true
-    depends_on:
-      database:
-        condition: service_healthy
     env_file: .env
     environment:
-      DATABASE_URL: jdbc:postgresql://database:5432/qqbot
-      DATABASE_USER: qqbot
+      PORT: "8080"
+      BOT_STATE_DIR: /app/.state
+      DATABASE_URL: jdbc:sqlite:/app/.state/qqbot.db
+      RAG_ENABLED: ${RAG_ENABLED:-false}
     ports:
-      - "127.0.0.1:8080:8080"
+      - "${BOT_BIND_ADDRESS:-127.0.0.1}:${BOT_PORT:-8080}:8080"
     volumes:
       - state:/app/.state
     stop_grace_period: 15s
     restart: unless-stopped
 volumes:
-  database:
   state:

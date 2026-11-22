@@ -1,0 +1,103 @@
+{
+  "formatVersion": 1,
+  "description": "合成验收输入，别名由测试加载器确定性映射为UUID；不是生产数据或测试通过证明。",
+  "defaults": {
+    "now": "2026-11-11T04:00:00Z",
+    "scope": "G1",
+    "epoch": 2,
+    "generation": 1,
+    "ragEnabled": false,
+    "contextMode": "BUDGETED",
+    "manual": "",
+    "summary": "",
+    "occurredAt": "2026-11-11T03:00:00Z"
+  },
+  "cases": [
+    {
+      "id": "FX01",
+      "name": "同名成员与改昵称",
+      "events": [
+        {"id":"a1","seq":1,"role":"USER","sender":"A","name":"小明","body":"我喜欢深色主题。"},
+        {"id":"b1","seq":2,"role":"USER","sender":"B","name":"小明","body":"我喜欢浅色主题。"},
+        {"id":"a2","seq":3,"role":"USER","sender":"A","name":"阿明","body":"我还是原来的偏好。"}
+      ],
+      "trigger": {"id":"q1","seq":4,"sender":"B","name":"小明","kind":"CHAT","question":"我喜欢哪种主题？"},
+      "expected": {"include":["a1","b1","a2"],"exclude":[],"sameMemberLabel":[["a1","a2"]],"differentMemberLabel":[["a1","b1"]],"generationCalls":1,"currentQuestionOccurrences":1}
+    },
+    {
+      "id": "FX02",
+      "name": "他人插话后追问机器人第二点",
+      "events": [
+        {"id":"a1","seq":1,"role":"USER","sender":"A","name":"甲","body":"介绍发布步骤。","conversation":"A"},
+        {"id":"bot1","seq":2,"role":"ASSISTANT","sender":"BOT","name":"机器人","body":"第一步备份，第二步执行数据库迁移。","conversation":"A","replyFor":"a1","state":"SENT","deliveredAt":"2026-11-11T03:01:00Z"},
+        {"id":"b1","seq":3,"role":"USER","sender":"B","name":"乙","body":"我去买午饭。"}
+      ],
+      "trigger": {"id":"q2","seq":4,"sender":"A","name":"甲","kind":"CHAT","question":"第二步展开说说。","occurredAt":"2026-11-11T03:02:00Z"},
+      "expected": {"include":["a1","bot1"],"exclude":[],"generationCalls":1,"currentQuestionOccurrences":1}
+    },
+    {
+      "id": "FX03",
+      "name": "只看到成功发送的分段",
+      "events": [
+        {"id":"a1","seq":1,"role":"USER","sender":"A","name":"甲","body":"给我四点建议。","conversation":"A"},
+        {"id":"bot0","seq":2,"role":"ASSISTANT","sender":"BOT","name":"机器人","body":"成功段：先备份。","conversation":"A","replyFor":"a1","partIndex":0,"state":"SENT","deliveredAt":"2026-11-11T03:01:00Z"},
+        {"id":"bot1","seq":null,"role":"ASSISTANT","sender":"BOT","name":"机器人","body":"未知段：迁移。","conversation":"A","replyFor":"a1","partIndex":1,"state":"UNKNOWN"},
+        {"id":"bot2","seq":null,"role":"ASSISTANT","sender":"BOT","name":"机器人","body":"待发段：重启。","conversation":"A","replyFor":"a1","partIndex":2,"state":"PENDING"},
+        {"id":"bot3","seq":null,"role":"ASSISTANT","sender":"BOT","name":"机器人","body":"失败段：验收。","conversation":"A","replyFor":"a1","partIndex":3,"state":"FAILED"}
+      ],
+      "trigger": {"id":"q3","seq":3,"sender":"A","name":"甲","kind":"CHAT","question":"展开你发出的建议。","occurredAt":"2026-11-11T03:02:00Z"},
+      "expected": {"include":["bot0"],"exclude":["bot1","bot2","bot3"],"generationCalls":1,"currentQuestionOccurrences":1}
+    },
+    {
+      "id": "FX04",
+      "name": "同时检查接收序号与发生时间",
+      "events": [
+        {"id":"past","seq":1,"role":"USER","sender":"A","name":"甲","body":"可见历史。","occurredAt":"2026-11-11T03:00:00Z"},
+        {"id":"future-time","seq":2,"role":"USER","sender":"B","name":"乙","body":"发生时间比问题晚。","occurredAt":"2026-11-11T03:20:00Z"},
+        {"id":"late-arrival","seq":11,"role":"USER","sender":"B","name":"乙","body":"虽然时间戳早但接收在问题后。","occurredAt":"2026-11-11T02:00:00Z"}
+      ],
+      "trigger": {"id":"q4","seq":10,"sender":"A","name":"甲","kind":"CHAT","question":"接着聊。","occurredAt":"2026-11-11T03:10:00Z"},
+      "expected": {"include":["past"],"exclude":["future-time","late-arrival"],"generationCalls":1,"currentQuestionOccurrences":1}
+    },
+    {
+      "id": "FX05",
+      "name": "引用远处消息并排除跨群同键",
+      "events": [
+        {"id":"quoted","messageKey":"shared-key","seq":1,"role":"USER","sender":"A","name":"甲","body":"方案X采用灰度发布。"},
+        {"id":"other-group","messageKey":"shared-key","scope":"G2","seq":1,"role":"USER","sender":"A","name":"甲","body":"另一个群的秘密方案。"},
+        {"id":"recent","seq":80,"role":"USER","sender":"B","name":"乙","body":"刚才在闲聊。"}
+      ],
+      "trigger": {"id":"q5","seq":81,"sender":"B","name":"乙","kind":"CHAT","question":"这个方案的风险是什么？","replyToMessageKey":"shared-key"},
+      "expected": {"include":["quoted"],"exclude":["other-group"],"explicitlyReferenced":["quoted"],"generationCalls":1,"currentQuestionOccurrences":1}
+    },
+    {
+      "id": "FX06",
+      "name": "同一个成员的群与私聊分离",
+      "scope": "DM_A",
+      "events": [
+        {"id":"group-text","scope":"G1","seq":1,"role":"USER","sender":"A","name":"甲","body":"群里的讨论。"},
+        {"id":"private-text","scope":"DM_A","seq":1,"role":"USER","sender":"A","name":"甲","body":"仅私聊的安排。"},
+        {"id":"other-private","scope":"DM_B","seq":1,"role":"USER","sender":"B","name":"乙","body":"另一个人的私聊。"}
+      ],
+      "trigger": {"id":"q6","seq":2,"sender":"A","name":"甲","kind":"CHAT","question":"继续。"},
+      "expected": {"include":["private-text"],"exclude":["group-text","other-private"],"generationCalls":1,"currentQuestionOccurrences":1}
+    },
+    {
+      "id": "FX07",
+      "name": "清除后只读新epoch",
+      "events": [
+        {"id":"cleared","epoch":1,"seq":1,"role":"USER","sender":"A","name":"甲","body":"已经清除的旧内容。"},
+        {"id":"new","epoch":2,"seq":20,"role":"USER","sender":"A","name":"甲","body":"清除后的新内容。"}
+      ],
+      "trigger": {"id":"q7","seq":21,"sender":"A","name":"甲","kind":"CHAT","question":"接着聊。"},
+      "expected": {"include":["new"],"exclude":["cleared"],"generationCalls":1,"currentQuestionOccurrences":1}
+    },
+    {
+      "id": "FX08",
+      "name": "无资料的记忆查询不调用生成",
+      "events": [],
+      "trigger": {"id":"q8","seq":1,"sender":"A","name":"甲","kind":"MEMORY","question":"月球图书馆"},
+      "expected": {"include":[],"exclude":[],"generationCalls":0,"localReply":"没有找到当前范围内的相关记录。"}
+    }
+  ]
+}

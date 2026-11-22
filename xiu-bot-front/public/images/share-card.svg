@@ -1,0 +1,20 @@
+<!--
+ [INPUT]: 依赖群知折页 Z、橙色纸面色值与官网主标题。
+ [OUTPUT]: 提供独立 SVG 分享封面。
+ [POS]: 社交元信息使用。不载入外部图片或字体。
+ [PROTOCOL]: Update this header on change, then check AGENTS.md
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+ <title id="title">群知 xiu-bot — 让群聊有回应，也有记忆。</title><desc id="desc">可自行部署的 QQ 群聊 AI 助手，Markdown 记忆、昨日日报与可视化管理台。</desc>
+ <defs><pattern id="paper" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r=".7" fill="#d8c4ac" opacity=".38"/></pattern></defs>
+ <rect width="1200" height="630" fill="#f7f8f5"/><rect x="24" y="24" width="1152" height="582" fill="#fff" stroke="#e3e6df"/><rect x="25" y="25" width="1150" height="390" fill="url(#paper)"/>
+ <path d="M25 28h431" stroke="#dc793e" stroke-width="6"/><path d="M456 28h288" stroke="#8ca3bb" stroke-width="6"/><path d="M744 28h431" stroke="#292e2a" stroke-width="6"/>
+ <g transform="translate(62 63)"><rect x="2" y="2" width="60" height="60" rx="17" fill="#B64B1B"/><path d="M14 14h36v10L27 42h23v9H14V40l23-17H14v-9Z" fill="#FFF8EF"/><path d="M37 23h13L27 42H14l23-19Z" fill="#F5B77E"/></g>
+ <g fill="#272b28" font-family="system-ui,Microsoft YaHei,sans-serif"><text x="143" y="107" font-size="38" font-weight="700">群知</text><text x="240" y="106" font-size="22" fill="#626b60">xiu-bot</text></g>
+ <g fill="#b64b1b" font-family="Songti SC,SimSun,serif" font-size="66"><text x="64" y="276">让群聊有回应，</text><text x="64" y="369">也有记忆。</text></g>
+ <g fill="#626b60" font-family="system-ui,Microsoft YaHei,sans-serif"><text x="64" y="485" font-size="26">官方 QQ · Markdown 记忆 · 可视化管理台</text><text x="64" y="540" font-size="22">部署在自己的实例</text></g>
+ <rect x="795" y="189" width="319" height="241" rx="12" fill="#fff" stroke="#e3e6df" stroke-width="2"/><path d="M795 237h319" stroke="#e3e6df" stroke-width="2"/>
+ <circle cx="822" cy="214" r="5" fill="#b64b1b"/><rect x="843" y="208" width="97" height="10" rx="5" fill="#d8c4ac"/>
+ <rect x="888" y="257" width="201" height="48" rx="7" fill="#fcf0e7"/><rect x="820" y="322" width="242" height="77" rx="7" fill="#f7f8f5"/>
+ <path d="M906 281h102M841 346h172M841 370h118" stroke="#b38a6a" stroke-width="4" stroke-linecap="round"/>
+</svg>

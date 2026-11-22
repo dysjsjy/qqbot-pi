@@ -1,4 +1,5 @@
 /target/
+/dist/
 /.tools/
 /.state/
 /.env
@@ -9,9 +10,19 @@
 /admin-web/playwright-report/
 /runtime/pi/node_modules/
 *.log
+__pycache__/
+*.pyc
 .idea/
 
-/test-support/node_modules/
-/test-support/test-results/
-/test-support/playwright-report/
 *.tsbuildinfo
+*.db
+*.db-*
+*.bot.lock
+
+# Generated test media and local release inputs
+/test-results/
+/playwright-report/
+/xiu-bot-front/tmp/
+/xiu-bot-front/node_modules/
+/xiu-bot-front/dist/
+/local/

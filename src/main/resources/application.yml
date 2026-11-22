@@ -2,13 +2,17 @@ spring:
   application:
     name: qqbot-pi
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/qqbot}
-    username: ${DATABASE_USER:qqbot}
-    password: ${DATABASE_PASSWORD:}
+    url: ${DATABASE_URL:jdbc:sqlite:qqbot.db}
+    driver-class-name: org.sqlite.JDBC
     hikari:
-      maximum-pool-size: 8
+      maximum-pool-size: 1
+      connection-init-sql: PRAGMA foreign_keys=ON
+      data-source-properties:
+        busy_timeout: 10000
+        transaction_mode: IMMEDIATE
   flyway:
     enabled: true
+    locations: classpath:db/sqlite
   task:
     scheduling:
       pool:
@@ -40,6 +44,46 @@ bot:
   admin-password-hash: ${ADMIN_PASSWORD_HASH:}
   state-dir: ${BOT_STATE_DIR:.state}
   scheduling: ${BOT_SCHEDULING:true}
+  worker:
+    poll-ms: ${BOT_WORKER_POLL_MS:200}
+  trace:
+    enabled: ${BOT_TRACE_ENABLED:true}
+    retention-days: ${BOT_TRACE_RETENTION_DAYS:7}
+  rag:
+    enabled: ${RAG_ENABLED:false}
+  experimental:
+    member-profile:
+      enabled: ${BOT_EXPERIMENTAL_MEMBER_PROFILE_ENABLED:false}
+      poll-ms: ${MEMBER_PROFILE_POLL_MS:30000}
+      context-tokens: ${MEMBER_PROFILE_CONTEXT_TOKENS:500}
+      max-injected-members: ${MEMBER_PROFILE_MAX_INJECTED_MEMBERS:4}
+  memory:
+    retention:
+      hot-window-days: ${BOT_HOT_WINDOW_DAYS:30}
+      archive-retention-days: ${BOT_ARCHIVE_RETENTION_DAYS:0}
+      process-retention-days: ${BOT_PROCESS_RETENTION_DAYS:30}
+    raw-archive:
+      enabled: ${RAW_ARCHIVE_ENABLED:true}
+      segment-bytes: ${RAW_ARCHIVE_SEGMENT_BYTES:67108864}
+      segment-max-age-seconds: ${RAW_ARCHIVE_SEGMENT_MAX_AGE_SECONDS:86400}
+      poll-ms: ${RAW_ARCHIVE_POLL_MS:1000}
+      batch-messages: ${RAW_ARCHIVE_BATCH_MESSAGES:500}
+      batch-bytes: ${RAW_ARCHIVE_BATCH_BYTES:1048576}
+      index-interval-bytes: ${RAW_ARCHIVE_INDEX_INTERVAL_BYTES:4096}
+      max-open-segments: ${RAW_ARCHIVE_MAX_OPEN_SEGMENTS:16}
+      gc-poll-ms: ${RAW_ARCHIVE_GC_POLL_MS:60000}
+    input-tokens: ${MEMORY_INPUT_TOKENS:8000}
+    output-tokens: ${MEMORY_OUTPUT_TOKENS:800}
+    context-window: ${MEMORY_CONTEXT_WINDOW:32768}
+    safety-tokens: ${MEMORY_SAFETY_TOKENS:1024}
+    summary-output-tokens: ${MEMORY_SUMMARY_OUTPUT_TOKENS:1000}
+    profile-output-tokens: ${MEMBER_PROFILE_OUTPUT_TOKENS:600}
+    currency: ${MEMORY_CURRENCY:USD}
+    input-price: ${MEMORY_INPUT_PRICE:}
+    output-price: ${MEMORY_OUTPUT_PRICE:}
+    cache-read-price: ${MEMORY_CACHE_READ_PRICE:}
+    cache-write-price: ${MEMORY_CACHE_WRITE_PRICE:}
+    price-version: ${MEMORY_PRICE_VERSION:unset}
   pi:
     node: ${PI_NODE:node}
     cli: ${PI_CLI:runtime/pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js}
@@ -48,6 +92,9 @@ bot:
     key-env: ${PI_KEY_ENV:OPENAI_API_KEY}
     api-key: ${PI_API_KEY:}
     timeout-seconds: ${PI_TIMEOUT_SECONDS:60}
+    max-timeout-seconds: ${PI_MAX_TIMEOUT_SECONDS:300}
+    queue-timeout-seconds: ${PI_QUEUE_TIMEOUT_SECONDS:120}
+    request-timeout-seconds: ${PI_REQUEST_TIMEOUT_SECONDS:420}
     base-url: ${PI_BASE_URL:}
   embedding:
     url: ${EMBEDDING_URL:}
@@ -57,10 +104,14 @@ bot:
     min-similarity: ${EMBEDDING_MIN_SIMILARITY:0.65}
   qq:
     enabled: ${QQ_ENABLED:false}
-    base-url: ${QQ_BASE_URL:}
-    token: ${QQ_TOKEN:}
-    account-id: ${QQ_ACCOUNT_ID:}
-    webhook-secret: ${QQ_WEBHOOK_SECRET:}
+    official:
+      transport: ${QQ_OFFICIAL_TRANSPORT:websocket}
+      bot-openid: ${QQ_OFFICIAL_BOT_OPENID:}
+      app-id: ${QQ_APP_ID:}
+      app-secret: ${QQ_APP_SECRET:}
+      api-base-url: ${QQ_OFFICIAL_API_BASE_URL:https://api.bot.qq.com}
+      token-url: ${QQ_OFFICIAL_TOKEN_URL:https://api.bot.qq.com/app/getAppAccessToken}
+      allow-active-messages: ${QQ_OFFICIAL_ALLOW_ACTIVE_MESSAGES:false}
   weixin:
     enabled: ${WEIXIN_ENABLED:false}
     base-url: ${WEIXIN_BASE_URL:}

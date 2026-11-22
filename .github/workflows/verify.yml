@@ -1,0 +1,27 @@
+name: Verify
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: ['17', '21']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.1
+          cache: npm
+          cache-dependency-path: |
+            admin-web/package-lock.json
+            runtime/pi/package-lock.json
+      - run: npm ci --ignore-scripts
+        working-directory: runtime/pi
+      - run: npm ci && npm run build
+        working-directory: admin-web
+      - run: bash mvnw -B verify -Pfrontend

@@ -1,7 +1,15 @@
+/**
+ * [INPUT]: 依赖范围登记、消息日志、回复策略、命令和模型准入。
+ * [OUTPUT]: 提供去重采集与已采集消息的分流回执。
+ * [POS]: 采集与回复分流共用入站事务。
+ * [PROTOCOL]: Update this header on change, then check AGENTS.md
+ */
 package dev.qqbot.message;
 
-import dev.qqbot.persistence.Db;
-import java.time.Instant;
+import dev.qqbot.text.Texts;
+import dev.qqbot.trace.Trace;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -9,130 +17,169 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class IngestService {
-    public record Receipt(UUID groupId, UUID messageId, boolean duplicate, boolean accepted, boolean command) {}
-    private final Db db;
-    private final dev.qqbot.schedule.DailySummaryService summaries;
+    private static final String QQ = "QQ";
+    private static final Set<String> CHANNELS = Set.of(QQ, "WEIXIN");
+    private static final String NON_TEXT = "NON_TEXT";
 
-    public IngestService(Db db,dev.qqbot.schedule.DailySummaryService summaries) { this.db = db;this.summaries=summaries; }
+    public record Receipt(
+            UUID groupId, UUID messageId, boolean duplicate, boolean accepted, boolean command) {}
 
+    private final ScopeRegistry scopes;
+    private final MessageJournal messages;
+    private final ReplyPolicyService policies;
+    private final ConversationService conversations;
+    private final CommandHandler commands;
+    private final RunAdmission admission;
+
+    public IngestService(
+            ScopeRegistry scopes,
+            MessageJournal messages,
+            ReplyPolicyService policies,
+            ConversationService conversations,
+            CommandHandler commands,
+            RunAdmission admission) {
+        this.scopes = scopes;
+        this.messages = messages;
+        this.policies = policies;
+        this.conversations = conversations;
+        this.commands = commands;
+        this.admission = admission;
+    }
+
+    /** 采集已认证事件并按范围分流；不支持的平台或不匹配的私聊目标会被拒绝。 */
     @Transactional
     public Receipt ingest(GroupIngestRequest request) {
-        String channel = request.channel().toUpperCase();
-        if (!Set.of("QQ", "WEIXIN").contains(channel)) throw new IllegalArgumentException("Unsupported channel");
-        UUID groupId = ensureGroup(channel, request.accountId(), request.groupId());
-        Group group = Group.from(db.one("select * from group_config where id=? for update", groupId));
-        boolean nonText="NON_TEXT".equals(request.kind());
-        if (!group.enabled() || request.isSelf() || (request.text().isBlank()&&!nonText)) {
-            return new Receipt(groupId, null, false, false, false);
+        Objects.requireNonNull(request, "request must not be null");
+        Trace.begin(admission.traces(), Trace.INGRESS, "ingress", null, null);
+        String status = Trace.OK;
+        try {
+            return collectEvent(request);
+        } catch (RuntimeException failure) {
+            status = Trace.ERROR;
+            throw failure;
+        } finally {
+            Trace.end(status, null);
         }
-        if(request.occurredAt().isBefore(Instant.now().minus(java.time.Duration.ofDays(30))))return new Receipt(groupId,null,false,false,false);
-
-        Instant occurredAt = request.occurredAt().isAfter(Instant.now().plusSeconds(300))
-                ? Instant.now() : request.occurredAt();
-        UUID messageId = UUID.randomUUID();
-        int inserted = db.exec("""
-                insert into group_message(id,group_id,message_key,sender_id,sender_name,body,occurred_at,epoch,kind,index_state)
-                values(?,?,?,?,?,?,?,?,?,'PENDING') on conflict(group_id,message_key) do nothing
-                """, messageId, groupId, request.messageId(), request.senderId(), request.senderName(),
-                nonText?"":request.text(), occurredAt, group.epoch(), nonText?"NON_TEXT":"TEXT");
-        db.exec("update group_config set last_received_at=greatest(coalesce(last_received_at,?),?), connection_state='ONLINE' where id=?",
-                occurredAt, occurredAt, groupId);
-        if (inserted == 0) {
-            var existing = db.one("select id from group_message where group_id=? and message_key=?", groupId, request.messageId());
-            return new Receipt(groupId, (UUID) existing.get("id"), true, false, false);
-        }
-
-        if(nonText){db.exec("update group_message set index_state='IGNORED' where id=?",messageId);return new Receipt(groupId,messageId,false,true,false);}
-        String command = Texts.command(request.text());
-        boolean isCommand = !command.isEmpty();
-        if(isCommand)db.exec("update group_message set kind='COMMAND',index_state='IGNORED' where id=?",messageId);
-        if ((!isCommand && !request.mentionsBot()) || !group.replyEnabled()) return new Receipt(groupId, messageId, false, true, false);
-        ensureConversation(groupId, request.senderId());
-        var conversation = db.one("select id,generation from conversation where group_id=? and sender_id=?", groupId, request.senderId());
-        boolean admin = group.isAdmin(request.senderId());
-
-        if (command.equals("/summary")) {
-            db.exec("update group_message set index_state='IGNORED' where id=?", messageId);
-            if (!request.text().strip().equals("/summary yesterday")) {
-                enqueueReply(groupId, messageId, "cmd:" + messageId, group.epoch(), "/summary yesterday 仅支持昨日摘要。");
-                return new Receipt(groupId, messageId, false, true, true);
-            }
-            if (admin) {UUID dailyId=summaries.trigger(groupId,"COMMAND");var daily=db.one("select state from daily_run where id=?",dailyId);enqueueReply(groupId,messageId,"cmd:"+messageId,group.epoch(),"昨日分析任务："+dailyId+"（"+daily.get("state")+"）。完整报告可在管理端查看，同一天不会重复创建。");}
-            else enqueueReply(groupId, messageId, "cmd:" + messageId, group.epoch(), "仅此群管理员可生成日报。");
-            return new Receipt(groupId, messageId, false, admin, true);
-        }
-
-        UUID conversationId = (UUID) conversation.get("id");
-        if (command.equals("/help")) {
-            db.exec("update group_message set index_state='IGNORED' where id=?", messageId);
-            enqueueReply(groupId, messageId, "cmd:" + messageId, group.epoch(),
-                    "命令：/help /new /cancel /memory 问题。@我 可基于本群记录回答。仅本群管理员可运行 /summary yesterday。");
-            return new Receipt(groupId, messageId, false, true, true);
-        }
-        if (command.equals("/new")) {
-            db.exec("update conversation set generation=generation+1,checkpoint_ref=null,updated_at=now() where id=?", conversationId);
-            db.exec("update agent_run set state='CANCELLED',finished_at=now() where conversation_id=? and state in ('QUEUED','RUNNING')", conversationId);
-            db.exec("update outbox set state='CANCELLED' where conversation_id=? and state='PENDING'", conversationId);
-            db.exec("update group_message set index_state='IGNORED' where id=?", messageId);
-            enqueueReply(groupId, messageId, "cmd:" + messageId, group.epoch(), "当前会话已重置；群记忆仍保留。");
-            return new Receipt(groupId, messageId, false, true, true);
-        }
-        if (command.equals("/cancel")) {
-            var run = db.one("select id from agent_run where conversation_id=? and state='RUNNING' order by created_at desc limit 1", conversationId);
-            if (run != null) {
-                UUID runId = (UUID) run.get("id");
-                db.exec("update agent_run set state='CANCELLED',finished_at=now() where id=?", runId);
-                db.exec("update outbox set state='CANCELLED' where agent_run_id=? and state='PENDING'", runId);
-            }
-            db.exec("update group_message set index_state='IGNORED' where id=?", messageId);
-            enqueueReply(groupId, messageId, "cmd:" + messageId, group.epoch(), run == null ? "当前没有运行中的任务。" : "已取消你的生成任务。");
-            return new Receipt(groupId, messageId, false, true, true);
-        }
-
-        String prompt = request.text().strip();
-        String kind = "CHAT";
-        if (command.equals("/memory")) {
-            kind = "MEMORY";
-            prompt = prompt.length() > 7 ? prompt.substring(7).strip() : "";
-            if (prompt.isEmpty()) {
-                db.exec("update group_message set index_state='IGNORED' where id=?", messageId);
-                enqueueReply(groupId, messageId, "cmd:" + messageId, group.epoch(), "用法：/memory 你的问题");
-                return new Receipt(groupId, messageId, false, true, true);
-            }
-        } else if (isCommand) {
-            db.exec("update group_message set index_state='IGNORED' where id=?", messageId);
-            enqueueReply(groupId, messageId, "cmd:" + messageId, group.epoch(), "未知命令。发送 /help 查看可用命令。");
-            return new Receipt(groupId, messageId, false, true, true);
-        }
-
-        UUID runId = UUID.randomUUID();
-        db.one("select pg_advisory_xact_lock(11072027)");
-        long queued=((Number)db.one("select count(*) as n from agent_run where state='QUEUED'").get("n")).longValue();
-        long own=((Number)db.one("select count(*) as n from agent_run where conversation_id=? and state='QUEUED'",conversationId).get("n")).longValue();
-        long recent=((Number)db.one("select count(*) as n from agent_run where conversation_id=? and created_at>now()-interval '1 minute'",conversationId).get("n")).longValue();
-        if(queued>=20||own>=5||recent>=6){enqueueReply(groupId,messageId,"cmd:"+messageId,group.epoch(),"请求较多，请稍后再试；群消息仍已保存。");return new Receipt(groupId,messageId,false,true,isCommand);}
-        db.exec("insert into agent_run(id,group_id,message_id,conversation_id,generation,epoch,kind,prompt,state) values(?,?,?,?,?,?,?,?,'QUEUED')",
-                runId, groupId, messageId, conversationId, conversation.get("generation"), group.epoch(), kind, prompt);
-        if(isCommand)db.exec("update group_message set kind='COMMAND',index_state='IGNORED' where id=?", messageId);
-        return new Receipt(groupId, messageId, false, true, isCommand);
     }
 
-    private UUID ensureGroup(String channel, String account, String external) {
-        UUID id = UUID.randomUUID();
-        db.exec("insert into group_config(id,channel,account_id,external_id,name,enabled,collection_since,connection_state) values(?,?,?,?,?,false,null,'ONLINE') on conflict(channel,account_id,external_id) do nothing",
-                id, channel, account, external, external);
-        return (UUID) db.one("select id from group_config where channel=? and account_id=? and external_id=?", channel, account, external).get("id");
+    private Receipt collectEvent(GroupIngestRequest request) {
+        String channel = request.channel().toUpperCase(Locale.ROOT);
+        Trace.attr("channel", channel);
+        validateEvent(channel, request);
+        boolean isNonText = NON_TEXT.equals(request.kind());
+        boolean isIgnored = isIgnoredEvent(request, isNonText);
+        if (request.privateChat() && isIgnored) {
+            return new Receipt(null, null, false, false, false);
+        }
+        // SIDE EFFECT: 范围发现、采集和分流使用同一个入站事务。
+        Group group = resolveScope(channel, request);
+        if (!group.enabled() || isIgnored || !messages.accepts(request.occurredAt())) {
+            return new Receipt(group.id(), null, false, false, false);
+        }
+        return appendMessage(group, request, isNonText);
     }
 
-    private void ensureConversation(UUID groupId, String senderId) {
-        db.exec("insert into conversation(id,group_id,sender_id) values(?,?,?) on conflict(group_id,sender_id) do nothing", UUID.randomUUID(), groupId, senderId);
+    private static void validateEvent(String channel, GroupIngestRequest request) {
+        if (!CHANNELS.contains(channel)) {
+            throw new IllegalArgumentException("Unsupported channel: channel=" + channel);
+        }
+        if (request.privateChat()
+                && (!QQ.equals(channel) || !request.groupId().equals(request.senderId()))) {
+            throw new IllegalArgumentException("Invalid private chat target: channel=" + channel);
+        }
     }
 
-    private void enqueueReply(UUID groupId, UUID originId, String key, long epoch, String text) {
-        int part = 0;
-        for (String body : Texts.delivery(text)) {
-            db.exec("insert into outbox(id,group_id,result_key,epoch,part_index,body,state) values(?,?,?,?,?,?,'PENDING') on conflict(result_key,part_index) do nothing",
-                    UUID.randomUUID(), groupId, key, epoch, part++, body);
+    private static boolean isIgnoredEvent(GroupIngestRequest request, boolean isNonText) {
+        return request.isSelf() || (request.text().isBlank() && !isNonText);
+    }
+
+    private Group resolveScope(String channel, GroupIngestRequest request) {
+        try (var span = Trace.span("ingress.resolve")) {
+            return scopes.resolve(channel, request);
+        }
+    }
+
+    private Receipt appendMessage(Group group, GroupIngestRequest request, boolean isNonText) {
+        MessageJournal.Entry message = writeMessage(group, request);
+        if (message.duplicate()) {
+            return new Receipt(group.id(), message.id(), true, false, false);
+        }
+        if (isNonText) {
+            messages.ignoreIndex(message.id());
+            return new Receipt(group.id(), message.id(), false, true, false);
+        }
+        return routeMessage(MessageRoute.classify(group, message.id(), request));
+    }
+
+    private MessageJournal.Entry writeMessage(Group group, GroupIngestRequest request) {
+        try (var span = Trace.span("ingress.append")) {
+            return messages.append(group, request);
+        }
+    }
+
+    private Receipt routeMessage(MessageRoute route) {
+        // SIDE EFFECT: 即使群关闭回复，命令也不能进入记忆索引。
+        if (route.isCommand()) {
+            messages.command(route.messageId());
+        }
+        if (!route.group().replyEnabled()) {
+            return route.receipt(true, false);
+        }
+        if (CommandHandler.administrative(route.command())) {
+            try (var span = Trace.span("ingress.command")) {
+                boolean isAccepted =
+                        commands.administer(
+                                route.group(), route.messageId(), route.command(), route.request());
+                return route.receipt(isAccepted, true);
+            }
+        }
+        if (route.isOrdinaryGroupText() && !policies.shouldReply(route.group().id())) {
+            return route.receipt(true, false);
+        }
+        return routeConversationMessage(route);
+    }
+
+    private Receipt routeConversationMessage(MessageRoute route) {
+        // SIDE EFFECT: 会话、命令确认和生成任务由入站事务共同提交。
+        var conversation = conversations.ensure(route.group().id(), route.request().senderId());
+        try (var span = Trace.span("ingress.command")) {
+            var commandResult = commands.dispatchConversationCommand(route, conversation);
+            if (commandResult.isPresent()) {
+                return route.receipt(commandResult.orElseThrow(), true);
+            }
+        }
+        try (var span = Trace.span("ingress.enqueue")) {
+            admission.enqueue(route, conversation);
+        }
+        return route.receipt(true, route.isCommand());
+    }
+
+    record MessageRoute(Group group, UUID messageId, GroupIngestRequest request, String command) {
+        static final String MEMORY_COMMAND = "/memory";
+
+        static MessageRoute classify(Group group, UUID messageId, GroupIngestRequest request) {
+            return new MessageRoute(group, messageId, request, Texts.command(request.text()));
+        }
+
+        boolean isCommand() {
+            return !command.isEmpty();
+        }
+
+        boolean isOrdinaryGroupText() {
+            return !isCommand() && !request.mentionsBot() && !group.privateChat();
+        }
+
+        boolean isHistoryQuery() {
+            return MEMORY_COMMAND.equals(command);
+        }
+
+        String prompt() {
+            String text = request.text().strip();
+            return isHistoryQuery() ? text.substring(MEMORY_COMMAND.length()).strip() : text;
+        }
+
+        Receipt receipt(boolean isAccepted, boolean isCommand) {
+            return new Receipt(group.id(), messageId, false, isAccepted, isCommand);
         }
     }
 }
